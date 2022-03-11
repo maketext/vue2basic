@@ -1,0 +1,131 @@
+doctype html
+html()
+  head
+    meta(http-equiv='X-UA-Compatible', content='IE=edge,chrome=1')
+    meta(http-equiv='Content-Type', content='text/html; charset=utf-8;')
+    meta(http-equiv='Content-Script-Type', content='text/javascript')
+    meta(http-equiv='Content-Style-Type', content='text/css')
+    meta(http-equiv='Pragma', content='no-cache')
+    meta(name='description', content='')
+    link(rel='canonical', href='http://localhost:8888/index')
+
+    link(rel='icon', type='image/png', sizes='16x16', href='/favicon-16x16.png')
+    link(rel='icon', type='image/png', sizes='32x32', href='/favicon-32x32.png')
+    link(rel='icon', type='image/png', sizes='96x96', href='/favicon-96x96.png')
+
+    link(rel='apple-touch-icon', sizes='57x57', href='/apple-icon-57x57.png')
+    link(rel='apple-touch-icon', sizes='60x60', href='/apple-icon-60x60.png')
+    link(rel='apple-touch-icon', sizes='72x72', href='/apple-icon-72x72.png')
+    link(rel='apple-touch-icon', sizes='76x76', href='/apple-icon-76x76.png')
+    link(rel='apple-touch-icon', sizes='114x114', href='/apple-icon-114x114.png')
+    link(rel='apple-touch-icon', sizes='120x120', href='/apple-icon-120x120.png')
+    link(rel='apple-touch-icon', sizes='144x144', href='/apple-icon-144x144.png')
+    link(rel='apple-touch-icon', sizes='152x152', href='/apple-icon-152x152.png')
+    link(rel='apple-touch-icon', sizes='180x180', href='/apple-icon-180x180.png')
+
+    link(rel='icon', type='image/png', sizes='192x192', href='/android-icon-192x192.png')
+    link(rel='icon', type='image/png', sizes='32x32', href='/favicon-32x32.png')
+    link(rel='icon', type='image/png', sizes='96x96', href='/favicon-96x96.png')
+    link(rel='icon', type='image/png', sizes='16x16', href='/favicon-16x16.png')
+    link(rel='manifest', href='/manifest.json')
+
+    script(type='text/javascript', src="/js/vue2611.js")
+    script(type='text/javascript', src="/js/buefy.js")
+    script(type='text/javascript', src="/js/axios.js")
+
+    link(rel='stylesheet', href='/css/buefy.css')
+    link(rel='stylesheet', href='/css/main.css')
+    link(rel='stylesheet', href='https://cdn.jsdelivr.net/npm/@mdi/font@5.8.55/css/materialdesignicons.min.css')
+
+    title 무제
+
+body
+  div.h100.flex
+    #app
+      .tile(style="display:flex;padding-left:5em;")
+        user-tags
+
+script(type="text/x-template" id="user-tags")
+  .tile
+    b-input(v-model="va['아이디']")
+    b-input(v-model="va['비밀번호']")
+
+script(type="text/javascript").
+  let urlToSendMail = "#{serverSentParam}"
+
+  function log(str) {
+    console.log(str)
+  }
+  function thread(f) {
+    setInterval(f, 3000)
+  }
+  function post (url, param, callback) {
+      axios.post(url, param)
+      .then(function (res) {
+          //log("HTTP PATCH 응답 res.data=" + JSON.stringify(res.data))
+          callback(res)
+      })
+  }
+  function http(param) {
+      let posts = []
+      for(e of param)
+          posts.push(post(e.uri, e.param, e.cb))
+      Promise.allSync = function(i) {
+          if(i >= post.length)
+              return
+          if(typeof posts[i] == 'function')
+              posts[i]().then(() => {
+                  Promise.allSync(i+1)
+              })
+      }
+      Promise.allSync(0)
+
+  }
+
+  let userTags = {
+  	template: '#user-tags',
+  	data() {
+      return {
+        va: {
+          '아이디':'',
+          '비밀번호': '',
+        },
+      }
+    },
+    methods: {
+
+    },
+    created()
+    {
+      http([{
+        uri:'/getUserDetails', param: {ci:'---'}, cb:(res) => {
+          this.va['아이디'] = res.data.id
+          this.va['비밀번호'] = res.data.pw
+        }
+      }])
+    },
+    mounted()
+    {
+
+    }
+  }
+
+  let v = new Vue({
+      el: '#app',
+      components: {
+        'userTags':userTags,
+      },
+      data: {
+      },
+      methods: {
+      },
+      computed: {
+        
+      },
+      created()
+      {
+      },
+      mounted()
+      {
+      }
+  })
