@@ -1,4 +1,4 @@
-{
+let dd = {
 	content: [{
         stack: [
             {
