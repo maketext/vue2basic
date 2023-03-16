@@ -37,13 +37,16 @@ html()
     link(rel='stylesheet', href='/css/main.css')
     link(rel='stylesheet', href='https://cdn.jsdelivr.net/npm/@mdi/font@5.8.55/css/materialdesignicons.min.css')
 
-    title 무제
+    title NONAME
 
 body
   div.h100.flex
     #app
       .tile(style="display:flex;padding-left:5em;")
+        //- Component Type 1
         user-tags
+      //- Component Type 2
+      modal-find-form(v-bind='formProps') 
 
 script(type="text/x-template" id="user-tags")
   .tile
@@ -51,37 +54,41 @@ script(type="text/x-template" id="user-tags")
     b-input(v-model="va['비밀번호']")
 
 script(type="text/javascript").
-  let urlToSendMail = "#{serverSentParam}"
+  // Server sent parameters. When during sending, object should be changed as Base64 encoded String, JSON String.
+  let urlToSendMail = "#{serverSentStringParameterValue}"
+  const tableNameGlobal = JSON.parse(decodeURIComponent(escape(atob("#{tableName}"))))
 
+  // Common Utils Function
   function log(str) {
     console.log(str)
   }
   function thread(f) {
     setInterval(f, 3000)
   }
-  function post (url, param, callback) {
-      axios.post(url, param)
-      .then(function (res) {
-          //log("HTTP PATCH 응답 res.data=" + JSON.stringify(res.data))
-          callback(res)
+  Array.prototype.isLast = function(obj) {
+      if(this[this.length - 1] === obj) return true 
+      return false
+  }
+  
+  // Axios Wrapper
+  function http(e) {
+    function doit(method, url, param, callback) {
+      axios[method](url, param, {
+      }).then(function (res) {
+        console.log("HTTP 응답 res.data=" + JSON.stringify(res.data))
+        callback(res.data)
+      }).catch((reason) => {
+        callback(reason)
       })
-  }
-  function http(param) {
-      let posts = []
-      for(e of param)
-          posts.push(post(e.uri, e.param, e.cb))
-      Promise.allSync = function(i) {
-          if(i >= post.length)
-              return
-          if(typeof posts[i] == 'function')
-              posts[i]().then(() => {
-                  Promise.allSync(i+1)
-              })
-      }
-      Promise.allSync(0)
+    }
 
+    doit(e.method, e.uri, e.param, e.cb)
   }
 
+  // Vue Instance for Event Bus
+  const EventBus = new Vue()
+  
+  // Vue Component Type 1
   let userTags = {
   	template: '#user-tags',
   	data() {
@@ -98,7 +105,7 @@ script(type="text/javascript").
     created()
     {
       http([{
-        uri:'/getUserDetails', param: {ci:'---'}, cb:(res) => {
+          method: 'post', uri:'/getUserDetails', param: {ci:'---'}, cb:(res) => {
           this.va['아이디'] = res.data.id
           this.va['비밀번호'] = res.data.pw
         }
@@ -109,23 +116,83 @@ script(type="text/javascript").
 
     }
   }
+  
+  // Vue Component Type 2
+  const ModalFindForm = {
+    props: ['data', 'this_', 'condition'],
+    methods: {
+    },
+    template: `
+      <div class="modal-card">
+        <header class="modal-card-head">
+          <p class="modal-card-title">검색</p>
+          <button
+            type="button"
+            class="delete"/>
+        </header>
+        <section class="modal-card-body">
+          <div class="tile">
+            <span class="m-tb-auto mr form-label">필드끼리의 조건</span>
+            <b-select v-model="condition">
+              <option
+                key="0"
+                value = "검색 조건을 선택하세요."
+                disabled>
+                검색 조건을 선택하세요.
+              </option>
+              <option
+                key="1"
+                :value="null">
+                또는 포함
+              </option>
+              <option
+                key="2"
+                value="그리고 포함">
+                그리고 포함
+              </option>
+            </b-select>
+          </div>
+          <div style="height:1em"/>
+        </section>
+        <footer class="modal-card-foot">
+            <div class="tile">
+              <div class="tile"></div>
+              <b-button @click="" label="검색"/>
+        </footer>
+      </div>
+    `,
+    created() {
+    }
+  }
+  
+  // Global Vue Component setting.
+  Vue.component('modal-find-form', ModalFindForm)
 
+  // Main Vue Instance
   let v = new Vue({
       el: '#app',
       components: {
-        'userTags':userTags,
+        'userTags': userTags,
       },
       data: {
+        formProps: {},
       },
       methods: {
       },
       computed: {
-        
+        fnSign: function () {
+          return (order, cmd) => {
+          }
+        }
       },
       created()
       {
+        this.formProps = {data: [], this_: this}
       },
       mounted()
       {
+        function init() {
+        }
+        init.bind(this)()
       }
   })
